@@ -29,6 +29,7 @@ let package = Package(
     name: "container",
     platforms: [.macOS("15")],
     products: [
+        .executable(name: "container-menu-bar", targets: ["ContainerMenuBar"]),
         .library(name: "ContainerCommands", targets: ["ContainerCommands"]),
         .library(name: "ContainerBuild", targets: ["ContainerBuild"]),
         .library(name: "ContainerAPIService", targets: ["ContainerAPIService"]),
@@ -79,6 +80,11 @@ let package = Package(
                 "ContainerCommands",
             ],
             path: "Sources/CLI"
+        ),
+        .executableTarget(
+            name: "ContainerMenuBar",
+            dependencies: [],
+            path: "Sources/MenuBar"
         ),
         .testTarget(
             name: "CLITests",
