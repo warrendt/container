@@ -14,10 +14,11 @@
 // limitations under the License.
 //===----------------------------------------------------------------------===//
 
-import AppKit
 import Foundation
 
-@main
+#if canImport(AppKit)
+import AppKit
+
 final class ContainerMenuBarApp: NSObject, NSApplicationDelegate {
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let commandRunner = ContainerCommandRunner()
@@ -170,10 +171,10 @@ final class ContainerMenuBarApp: NSObject, NSApplicationDelegate {
         }
 
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Start Services", action: #selector(startSystem), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "Stop Services", action: #selector(stopSystem), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "Run Image/Repo URL…", action: #selector(runNewContainer), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "Refresh", action: #selector(refreshMenuItem), keyEquivalent: "r"))
+        menu.addItem(actionItem(title: "Start Services", action: #selector(startSystem)))
+        menu.addItem(actionItem(title: "Stop Services", action: #selector(stopSystem)))
+        menu.addItem(actionItem(title: "Run Image/Repo URL…", action: #selector(runNewContainer)))
+        menu.addItem(actionItem(title: "Refresh", action: #selector(refreshMenuItem), keyEquivalent: "r"))
         menu.addItem(.separator())
 
         if containers.isEmpty {
@@ -187,7 +188,7 @@ final class ContainerMenuBarApp: NSObject, NSApplicationDelegate {
         }
 
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Quit", action: #selector(quit), keyEquivalent: "q"))
+        menu.addItem(actionItem(title: "Quit", action: #selector(quit), keyEquivalent: "q"))
         statusItem.menu = menu
     }
 
@@ -204,12 +205,12 @@ final class ContainerMenuBarApp: NSObject, NSApplicationDelegate {
         submenu.addItem(state)
         submenu.addItem(.separator())
 
-        let start = NSMenuItem(title: "Start", action: #selector(startContainer(_:)), keyEquivalent: "")
+        let start = actionItem(title: "Start", action: #selector(startContainer(_:)))
         start.representedObject = container.id
         start.isEnabled = !container.isRunning
         submenu.addItem(start)
 
-        let stop = NSMenuItem(title: "Stop", action: #selector(stopContainer(_:)), keyEquivalent: "")
+        let stop = actionItem(title: "Stop", action: #selector(stopContainer(_:)))
         stop.representedObject = container.id
         stop.isEnabled = container.isRunning
         submenu.addItem(stop)
@@ -218,11 +219,36 @@ final class ContainerMenuBarApp: NSObject, NSApplicationDelegate {
         return item
     }
 
+    private func actionItem(title: String, action: Selector, keyEquivalent: String = "") -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: action, keyEquivalent: keyEquivalent)
+        item.target = self
+        return item
+    }
+
     private func showMessage(_ message: String) {
         statusMessage = message
         rebuildMenu()
     }
 }
+
+@main
+enum ContainerMenuBarMain {
+    private static let appDelegate = ContainerMenuBarApp()
+
+    static func main() {
+        let app = NSApplication.shared
+        app.delegate = appDelegate
+        app.run()
+    }
+}
+#else
+@main
+enum ContainerMenuBarUnavailable {
+    static func main() {
+        FileHandle.standardError.write(Data("container-menu-bar requires macOS with AppKit.\n".utf8))
+    }
+}
+#endif
 
 private struct MenuContainer: Decodable {
     let id: String
